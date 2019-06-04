@@ -2,14 +2,16 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 
 public class CueBehavior : MonoBehaviour {
     public Transform cueBall;
+    public Transform cueStickRotationPoint;
     public Transform cueStick;
     private Vector3 cueStickOriginalPosition;
 
     private const float rotationSpeed = 200f;
-    private const float cueStickDistanceMultiplier = 10f;
+    private const float cueStickDistanceMultiplier = 5f;
 
     private const int MOUSE_PRIMARY_BUTTON = 0;
     private Vector2 m_lastMousePosition;
@@ -19,10 +21,14 @@ public class CueBehavior : MonoBehaviour {
     }
 
     private void Update() {
-        // Known Issue: This is being activated when UI slider is used
-        if(Input.GetMouseButton(MOUSE_PRIMARY_BUTTON)) {
+        // Known Issue: There should be UI elements everywhere the player shouldn't be clicking...
+        // Idea 1: Create specific areas the player can click to move...
+        // Idea 2: This area has to be near the cue ball...
+        if(Input.GetMouseButton(MOUSE_PRIMARY_BUTTON) && !EventSystem.current.IsPointerOverGameObject()) {
             ProcessCueStickRotation();
         }
+
+        Debug.DrawRay(cueStick.transform.position, cueStick.position + (-cueStick.up * 5f), Color.blue);
     }
 
     private void ProcessCueStickRotation() {
@@ -30,7 +36,9 @@ public class CueBehavior : MonoBehaviour {
         Vector2 mousePositionDifference = t_currentMousePosition - m_lastMousePosition;
         Vector2 snappedMousePositionDifference = SnapToNearestCardinal(mousePositionDifference);
         float t_rotationValue = (snappedMousePositionDifference.x + snappedMousePositionDifference.y);
-        cueBall.Rotate(new Vector3(0, t_rotationValue * Time.deltaTime * rotationSpeed, 0), Space.Self);
+
+        cueStickRotationPoint.Rotate(new Vector3(0, t_rotationValue * Time.deltaTime * rotationSpeed, 0), Space.Self);
+        cueStickOriginalPosition = cueStick.transform.position;
 
         m_lastMousePosition = Input.mousePosition;
     }
@@ -53,8 +61,14 @@ public class CueBehavior : MonoBehaviour {
 
     // CueBehavior interacting with UI is not good
     public void SliderValueChanged(Slider slider) {
-        // The Rotation is weird... fix the thing where cue still rotates when mouse is messing with UI
         Vector3 t_cueStickMaximumDistance = cueStickOriginalPosition + (cueStick.transform.up * cueStickDistanceMultiplier);
         cueStick.transform.position = Vector3.Lerp(cueStickOriginalPosition, t_cueStickMaximumDistance, slider.value);
+    }
+
+    public void Shoot() {
+        // TO DO
+        // Stick should hit the ball with the slider force...
+        // Physics? Just add velocity in that direction...
+        // Math? Calculate force and direction, play an animation and apply that force to the ball...
     }
 }
