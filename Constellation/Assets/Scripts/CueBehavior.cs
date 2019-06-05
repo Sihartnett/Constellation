@@ -6,9 +6,10 @@ using UnityEngine.EventSystems;
 
 public class CueBehavior : MonoBehaviour {
     public Transform cueBall;
-    public Transform cueStickRotationPoint;
     public Transform cueStick;
-    private Vector3 cueStickOriginalPosition;
+    private Rigidbody m_cueBallRigidbody;
+    private Vector3 m_cueStickOriginalPosition;
+    private float m_currentSliderValue = 0f;
 
     private const float rotationSpeed = 200f;
     private const float cueStickDistanceMultiplier = 5f;
@@ -17,7 +18,12 @@ public class CueBehavior : MonoBehaviour {
     private Vector2 m_lastMousePosition;
 
     private void Start() {
-        cueStickOriginalPosition = cueStick.transform.position;
+        m_cueBallRigidbody = cueBall.GetComponent<Rigidbody>();
+
+        // We keep it kinematic until we want to shoot
+        m_cueBallRigidbody.isKinematic = true;
+
+        m_cueStickOriginalPosition = cueStick.position;
     }
 
     private void Update() {
@@ -37,8 +43,10 @@ public class CueBehavior : MonoBehaviour {
         Vector2 snappedMousePositionDifference = SnapToNearestCardinal(mousePositionDifference);
         float t_rotationValue = (snappedMousePositionDifference.x + snappedMousePositionDifference.y);
 
-        cueStickRotationPoint.Rotate(new Vector3(0, t_rotationValue * Time.deltaTime * rotationSpeed, 0), Space.Self);
-        cueStickOriginalPosition = cueStick.transform.position;
+        cueStick.RotateAround(cueBall.position, Vector3.up, t_rotationValue * Time.deltaTime * rotationSpeed);
+
+        // The Original Position should be when slider value = 0
+        m_cueStickOriginalPosition = cueStick.position - ((cueStick.transform.up * cueStickDistanceMultiplier) * m_currentSliderValue);
 
         m_lastMousePosition = Input.mousePosition;
     }
@@ -59,10 +67,12 @@ public class CueBehavior : MonoBehaviour {
         return t_returnVector;
     }
 
-    // CueBehavior interacting with UI is not good
+    // CueBehavior interacting with UI elements is not good
     public void SliderValueChanged(Slider slider) {
-        Vector3 t_cueStickMaximumDistance = cueStickOriginalPosition + (cueStick.transform.up * cueStickDistanceMultiplier);
-        cueStick.transform.position = Vector3.Lerp(cueStickOriginalPosition, t_cueStickMaximumDistance, slider.value);
+        m_currentSliderValue = slider.value;
+
+        Vector3 t_cueStickMaximumDistance = m_cueStickOriginalPosition + (cueStick.transform.up * cueStickDistanceMultiplier);
+        cueStick.transform.position = Vector3.Lerp(m_cueStickOriginalPosition, t_cueStickMaximumDistance, m_currentSliderValue);
     }
 
     public void Shoot() {
