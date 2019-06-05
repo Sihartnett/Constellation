@@ -1086,7 +1086,7 @@ Rigidbody:
   m_AngularDrag: 0.05
   m_UseGravity: 1
   m_IsKinematic: 0
-  m_Interpolate: 1
+  m_Interpolate: 2
   m_Constraints: 0
   m_CollisionDetection: 3
 --- !u!1 &754296764
@@ -1412,8 +1412,8 @@ MonoBehaviour:
   - {fileID: 737728465}
   - {fileID: 1165921358}
   - {fileID: 1731195127}
-  minimumShootForce: 100
-  maximumShootForce: 5000
+  minimumShootForce: 500
+  maximumShootForce: 2500
   maximumWaitTime: 5
   timeToStopAllBalls: 2
 --- !u!54 &1041946642
@@ -1429,7 +1429,7 @@ Rigidbody:
   m_AngularDrag: 0.05
   m_UseGravity: 1
   m_IsKinematic: 1
-  m_Interpolate: 1
+  m_Interpolate: 2
   m_Constraints: 0
   m_CollisionDetection: 3
 --- !u!1 &1143353500
@@ -1628,7 +1628,7 @@ Rigidbody:
   m_AngularDrag: 0.05
   m_UseGravity: 1
   m_IsKinematic: 0
-  m_Interpolate: 1
+  m_Interpolate: 2
   m_Constraints: 0
   m_CollisionDetection: 3
 --- !u!1 &1190260670
@@ -1952,7 +1952,7 @@ Rigidbody:
   m_AngularDrag: 0.05
   m_UseGravity: 1
   m_IsKinematic: 0
-  m_Interpolate: 1
+  m_Interpolate: 2
   m_Constraints: 0
   m_CollisionDetection: 3
 --- !u!1 &1566484369
@@ -2126,7 +2126,7 @@ Rigidbody:
   m_AngularDrag: 0.05
   m_UseGravity: 1
   m_IsKinematic: 0
-  m_Interpolate: 1
+  m_Interpolate: 2
   m_Constraints: 0
   m_CollisionDetection: 3
 --- !u!1 &1788386208

@@ -54,16 +54,16 @@ public class CueBehavior : MonoBehaviour {
         if(cueBall) {
             Debug.Log("Validating Cue Ball...");
             Rigidbody t_cueBallRigidbody = cueBall.GetComponent<Rigidbody>();
-            t_cueBallRigidbody.interpolation = RigidbodyInterpolation.Interpolate;
-            // t_cueBallRigidbody.collisionDetectionMode = CollisionDetectionMode.Continuous;
+            t_cueBallRigidbody.interpolation = RigidbodyInterpolation.Extrapolate;
+            t_cueBallRigidbody.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
         }
 
         if(starBalls.Length > 0) {
             Debug.Log("Validating Star Balls...");
             foreach(Transform t_starBall in starBalls) {
                 Rigidbody t_starBallRigidbody = t_starBall.GetComponent<Rigidbody>();
-                t_starBallRigidbody.interpolation = RigidbodyInterpolation.Interpolate;
-                // t_starBallRigidbody.collisionDetectionMode = CollisionDetectionMode.Continuous;
+                t_starBallRigidbody.interpolation = RigidbodyInterpolation.Extrapolate;
+                t_starBallRigidbody.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
             }
         }
     }
