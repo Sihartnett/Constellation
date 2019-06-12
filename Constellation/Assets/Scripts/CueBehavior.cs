@@ -4,6 +4,10 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
+// NEXT STEPS
+// => Fixing Rotation (Raycasting from mouse to cue ball maybe ?!)
+// => Holes like billiards with trigger detectors... (make a billiards scene)
+
 public class CueBehavior : MonoBehaviour {
     public enum EGameState {
         ReadyToShoot,
@@ -30,7 +34,7 @@ public class CueBehavior : MonoBehaviour {
     private float m_currentSliderValue = 0f;
 
     // Rotation around cue ball
-    private const float rotationSpeed = 200f;
+    private const float rotationSpeed = 300f;
     private const float cueStickDistanceMultiplier = 2.5f;
 
     // Mouse Related Stuff
@@ -101,10 +105,14 @@ public class CueBehavior : MonoBehaviour {
     }
 
     private void ProcessCueStickRotation() {
-        Vector2 t_currentMousePosition = Input.mousePosition;
-        Vector2 mousePositionDifference = t_currentMousePosition - m_lastMousePosition;
-        Vector2 snappedMousePositionDifference = SnapToNearestCardinal(mousePositionDifference);
-        float t_rotationValue = (snappedMousePositionDifference.x + snappedMousePositionDifference.y);
+        Vector3 mousePositionInWorld = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        mousePositionInWorld.y = cueBall.transform.position.y;
+        Debug.DrawLine(mousePositionInWorld, cueBall.transform.position, Color.green, 1.0f);
+
+        // Rotate so the stick is parallel with the mouse position
+        Vector3 fromBallToStick = cueStick.transform.position - cueBall.transform.position;
+        Vector3 fromBallToMouse = mousePositionInWorld - cueBall.transform.position;
+        float t_rotationValue = Vector3.SignedAngle(fromBallToStick, fromBallToMouse, Vector3.up) * Mathf.Deg2Rad;
 
         cueStick.RotateAround(cueBall.position, Vector3.up, t_rotationValue * Time.deltaTime * rotationSpeed);
 
