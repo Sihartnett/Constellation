@@ -5,7 +5,6 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
 // NEXT STEPS
-// => Fixing Rotation (Raycasting from mouse to cue ball maybe ?!)
 // => Holes like billiards with trigger detectors... (make a billiards scene)
 
 public class CueBehavior : MonoBehaviour {
