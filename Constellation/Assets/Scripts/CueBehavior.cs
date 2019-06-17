@@ -4,9 +4,6 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
-// NEXT STEPS
-// => Holes like billiards with trigger detectors... (make a billiards scene)
-
 public class CueBehavior : MonoBehaviour {
     public enum EGameState {
         ReadyToShoot,
@@ -28,6 +25,10 @@ public class CueBehavior : MonoBehaviour {
     public float timeToStopAllBalls = 2f;
     private float m_timeWaiting = 0f;
 
+    [Header("Cue Stick Lines")]
+    public Transform cueStickLine;
+    private LineRenderer m_cueStickLineRenderer;
+
     private Rigidbody m_cueBallRigidbody;
     private Vector3 m_cueStickOriginalPosition;
     private float m_currentSliderValue = 0f;
@@ -38,13 +39,17 @@ public class CueBehavior : MonoBehaviour {
 
     // Mouse Related Stuff
     private const int MOUSE_PRIMARY_BUTTON = 0;
-    private Vector2 m_lastMousePosition;
 
     // State Related
     private EGameState m_currentGameState = EGameState.ReadyToShoot;
 
+    // Resetting Cue Ball Related
+    private Vector3 m_lastValidCueBallPosition;
+    private Vector3 m_lastValidCueBallRotation;
+
     private void Start() {
         m_cueBallRigidbody = cueBall.GetComponent<Rigidbody>();
+        m_cueStickLineRenderer = cueStickLine.GetComponent<LineRenderer>();
 
         // We keep it kinematic until we want to shoot
         m_cueBallRigidbody.isKinematic = true;
@@ -53,7 +58,6 @@ public class CueBehavior : MonoBehaviour {
     }
 
     private void OnValidate() {
-        // As the game heavily relies on Physics, we want to have everything to interpolate and have continuous collision detection mode.
         if(cueBall) {
             Debug.Log("Validating Cue Ball...");
             Rigidbody t_cueBallRigidbody = cueBall.GetComponent<Rigidbody>();
@@ -75,13 +79,11 @@ public class CueBehavior : MonoBehaviour {
         switch(m_currentGameState) {
             case EGameState.ReadyToShoot:
                 // Known Issue: There should be UI elements everywhere the player shouldn't be clicking...
-                // Idea 1: Create specific areas the player can click to move...
-                // Idea 2: This area has to be near the cue ball...
                 if (Input.GetMouseButton(MOUSE_PRIMARY_BUTTON) && !EventSystem.current.IsPointerOverGameObject()) {
                     ProcessCueStickRotation();
                 }
 
-                Debug.DrawRay(cueStick.transform.position, -cueStick.up * 10f, Color.blue, 5f);
+                Debug.DrawRay(cueStick.transform.position, -cueStick.up * 10f, Color.blue, 1f);
                 break;
             case EGameState.WaitingToShoot:
                 // Wait until we can shoot again...
@@ -98,8 +100,21 @@ public class CueBehavior : MonoBehaviour {
                     ResetCueStickPosition();
                     m_currentGameState = EGameState.ReadyToShoot;
                     cueStick.gameObject.SetActive(true);
+                    cueStickLine.gameObject.SetActive(true);
                 }
                 break;
+        }
+
+        // Showing where the ball will go
+        // Casting a Raycast to know exactly where the ball will hit
+        RaycastHit hitInfo;
+        bool hitAPoint = Physics.Raycast(cueBall.transform.position, -cueStick.up, out hitInfo);
+
+        if(hitAPoint) {
+            Debug.DrawLine(cueBall.transform.position, hitInfo.point, Color.black, 5.0f);
+
+            m_cueStickLineRenderer.SetPosition(0, cueBall.transform.localPosition);
+            m_cueStickLineRenderer.SetPosition(1, hitInfo.point - transform.parent.position);
         }
     }
 
@@ -117,46 +132,34 @@ public class CueBehavior : MonoBehaviour {
 
         // The Original Position should be when slider value = 0
         m_cueStickOriginalPosition = cueStick.position - ((cueStick.transform.up * cueStickDistanceMultiplier) * m_currentSliderValue);
-
-        m_lastMousePosition = Input.mousePosition;
-    }
-
-    private Vector2 SnapToNearestCardinal(Vector2 vectorToSnap) {
-        if(vectorToSnap == Vector2.zero) {
-            return Vector2.zero;
-        }
-
-        Vector2 t_returnVector = Vector2.zero;
-
-        if(Mathf.Abs(vectorToSnap.x) > Mathf.Abs(vectorToSnap.y)) {
-            t_returnVector.x = Mathf.Sign(vectorToSnap.x);
-        } else {
-            t_returnVector.y = Mathf.Sign(vectorToSnap.y);
-        }
-
-        return t_returnVector;
     }
 
     private void DecelerateAllBalls() {
         StartCoroutine(DecelerateBallRoutine(m_cueBallRigidbody));
         foreach(Transform t_starBall in starBalls) {
+            if(t_starBall == null) {
+                // Ball was already destroyed!
+                continue;
+            }
+
             StartCoroutine(DecelerateBallRoutine(t_starBall.GetComponent<Rigidbody>()));
         }
     }
 
     private IEnumerator DecelerateBallRoutine(Rigidbody ballRigidbody) {
         Vector3 t_currentBallVelocity = ballRigidbody.velocity;
-        Vector3 t_futureBallPosition = Vector3.zero;
+        Vector3 t_currentBallRotationVelocity = ballRigidbody.angularVelocity;
+        Vector3 t_futureBallVelocity = Vector3.zero;
 
         for(float t_timeElapsed = 0f; t_timeElapsed < timeToStopAllBalls; t_timeElapsed += Time.deltaTime) {
             float t = Mathf.Clamp01(t_timeElapsed / timeToStopAllBalls);
-            ballRigidbody.velocity = Vector3.Lerp(t_currentBallVelocity, t_futureBallPosition, t);
+            ballRigidbody.velocity = Vector3.Lerp(t_currentBallVelocity, t_futureBallVelocity, t);
+            ballRigidbody.angularVelocity = Vector3.Lerp(t_currentBallRotationVelocity, t_futureBallVelocity, t);
             yield return null;
         }
 
-        ballRigidbody.velocity = t_futureBallPosition;
-
-        Debug.LogWarning("Ball stopped!");
+        ballRigidbody.velocity = t_futureBallVelocity;
+        ballRigidbody.angularVelocity = t_futureBallVelocity;
     }
 
     private void ResetCueStickPosition() {
@@ -182,12 +185,22 @@ public class CueBehavior : MonoBehaviour {
             return;
         }
 
+        // Saving Valid Position in case we need to restore it
+        m_lastValidCueBallPosition = cueBall.transform.position;
+        m_lastValidCueBallRotation = cueBall.transform.localEulerAngles;
+
         m_timeWaiting = 0f;
         m_currentGameState = EGameState.WaitingToShoot;
+        cueStickLine.gameObject.SetActive(false);
         cueStick.gameObject.SetActive(false);
         m_cueBallRigidbody.isKinematic = false;
 
         float t_shootForce = Mathf.Lerp(minimumShootForce, maximumShootForce, m_currentSliderValue);
         m_cueBallRigidbody.AddForce(-cueStick.transform.up * t_shootForce);
+    }
+
+    public void ResetCueBall() {
+        cueBall.transform.position = m_lastValidCueBallPosition;
+        cueBall.transform.eulerAngles = m_lastValidCueBallRotation;
     }
 }
