@@ -16,18 +16,12 @@ public class CueBehavior : MonoBehaviour {
     public Transform cueStick;
     public Transform[] starBalls;
 
-    [Header("Shoot Configuration")]
-    public float minimumShootForce = 100f;
-    public float maximumShootForce = 15000;
-
-    [Header("Transition Times Related")]
-    public float maximumWaitTime = 5f;
-    public float timeToStopAllBalls = 2f;
-    private float m_timeWaiting = 0f;
-
     [Header("Cue Stick Lines")]
     public Transform cueStickLine;
     private LineRenderer m_cueStickLineRenderer;
+
+    public GameRules gameRulesAsset;
+    private float m_timeWaiting = 0f;
 
     private Rigidbody m_cueBallRigidbody;
     private Vector3 m_cueStickOriginalPosition;
@@ -88,7 +82,7 @@ public class CueBehavior : MonoBehaviour {
             case EGameState.WaitingToShoot:
                 // Wait until we can shoot again...
                 m_timeWaiting += Time.deltaTime;
-                if(m_timeWaiting > maximumWaitTime) {
+                if(m_timeWaiting > gameRulesAsset.maximumWaitTime) {
                     m_currentGameState = EGameState.TransitioningToReady;
                     m_timeWaiting = 0f;
                     DecelerateAllBalls();
@@ -96,7 +90,7 @@ public class CueBehavior : MonoBehaviour {
                 break;
             case EGameState.TransitioningToReady:
                 m_timeWaiting += Time.deltaTime;
-                if(m_timeWaiting > timeToStopAllBalls) {
+                if(m_timeWaiting > gameRulesAsset.timeToStopAllBalls) {
                     ResetCueStickPosition();
                     m_currentGameState = EGameState.ReadyToShoot;
                     cueStick.gameObject.SetActive(true);
@@ -151,8 +145,8 @@ public class CueBehavior : MonoBehaviour {
         Vector3 t_currentBallRotationVelocity = ballRigidbody.angularVelocity;
         Vector3 t_futureBallVelocity = Vector3.zero;
 
-        for(float t_timeElapsed = 0f; t_timeElapsed < timeToStopAllBalls; t_timeElapsed += Time.deltaTime) {
-            float t = Mathf.Clamp01(t_timeElapsed / timeToStopAllBalls);
+        for(float t_timeElapsed = 0f; t_timeElapsed < gameRulesAsset.timeToStopAllBalls; t_timeElapsed += Time.deltaTime) {
+            float t = Mathf.Clamp01(t_timeElapsed / gameRulesAsset.timeToStopAllBalls);
             ballRigidbody.velocity = Vector3.Lerp(t_currentBallVelocity, t_futureBallVelocity, t);
             ballRigidbody.angularVelocity = Vector3.Lerp(t_currentBallRotationVelocity, t_futureBallVelocity, t);
             yield return null;
@@ -195,7 +189,7 @@ public class CueBehavior : MonoBehaviour {
         cueStick.gameObject.SetActive(false);
         m_cueBallRigidbody.isKinematic = false;
 
-        float t_shootForce = Mathf.Lerp(minimumShootForce, maximumShootForce, m_currentSliderValue);
+        float t_shootForce = Mathf.Lerp(gameRulesAsset.minimumShootForce, gameRulesAsset.maximumShootForce, m_currentSliderValue);
         m_cueBallRigidbody.AddForce(-cueStick.transform.up * t_shootForce);
     }
 

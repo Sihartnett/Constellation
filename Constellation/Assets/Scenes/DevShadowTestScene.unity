@@ -1770,11 +1770,8 @@ MonoBehaviour:
   - {fileID: 737728465}
   - {fileID: 1165921358}
   - {fileID: 1731195127}
-  minimumShootForce: 500
-  maximumShootForce: 2500
-  maximumWaitTime: 4
-  timeToStopAllBalls: 0.5
   cueStickLine: {fileID: 1277226368}
+  gameRulesAsset: {fileID: 11400000, guid: d77b72b672a83f64db07a711a7fe5786, type: 2}
 --- !u!54 &1041946642
 Rigidbody:
   m_ObjectHideFlags: 0
