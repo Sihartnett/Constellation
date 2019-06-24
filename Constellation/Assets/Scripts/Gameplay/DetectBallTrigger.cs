@@ -13,8 +13,7 @@ public class DetectBallTrigger : MonoBehaviour {
         if(other.tag == "CueBall") {
             m_cueBehaviorReference.ResetCueBall();
         } else if(other.tag == "StarBall") {
-            // What happens when a Star Ball hits the hole?
-            Destroy(other.gameObject);
+            m_cueBehaviorReference.StartBallDestroyed(other.transform);
         }
     }
 }

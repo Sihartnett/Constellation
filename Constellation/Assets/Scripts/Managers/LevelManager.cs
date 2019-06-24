@@ -33,4 +33,14 @@ public class LevelManager : MonoBehaviour {
     public void QuitGame() {
         Application.Quit();
     }
+
+    // -------------------------------------------------------------------
+    // YOU WIN
+    public void PlayAgain() {
+        ReloadScene();
+    }
+
+    public void GoToMainMenu() {
+        LoadScene(0);
+    }
 }

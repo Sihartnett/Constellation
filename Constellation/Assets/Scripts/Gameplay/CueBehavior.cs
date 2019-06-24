@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System.Linq;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -9,17 +10,23 @@ public class CueBehavior : MonoBehaviour {
         ReadyToShoot,
         WaitingToShoot,
         TransitioningToReady,
+        GameOver,
     }
 
     [Header("Necessary Transforms")]
     public Transform cueBall;
     public Transform cueStick;
     public Transform[] starBalls;
+    private List<Transform> m_starBallsList;
 
     [Header("Cue Stick Lines")]
     public Transform cueStickLine;
     private LineRenderer m_cueStickLineRenderer;
 
+    [Header("User Interface")]
+    public GameObject youWinScreen;
+
+    [Header("Game Rules")]
     public GameRules gameRulesAsset;
     private float m_timeWaiting = 0f;
 
@@ -44,10 +51,13 @@ public class CueBehavior : MonoBehaviour {
     private void Start() {
         m_cueBallRigidbody = cueBall.GetComponent<Rigidbody>();
         m_cueStickLineRenderer = cueStickLine.GetComponent<LineRenderer>();
+        m_starBallsList = starBalls.ToList();
+
+        // Deactivating UI stuff
+        youWinScreen.SetActive(false);
 
         // We keep it kinematic until we want to shoot
         m_cueBallRigidbody.isKinematic = true;
-
         m_cueStickOriginalPosition = cueStick.position;
     }
 
@@ -140,20 +150,20 @@ public class CueBehavior : MonoBehaviour {
         }
     }
 
-    private IEnumerator DecelerateBallRoutine(Rigidbody ballRigidbody) {
-        Vector3 t_currentBallVelocity = ballRigidbody.velocity;
-        Vector3 t_currentBallRotationVelocity = ballRigidbody.angularVelocity;
+    private IEnumerator DecelerateBallRoutine(Rigidbody _ballRigidbody) {
+        Vector3 t_currentBallVelocity = _ballRigidbody.velocity;
+        Vector3 t_currentBallRotationVelocity = _ballRigidbody.angularVelocity;
         Vector3 t_futureBallVelocity = Vector3.zero;
 
         for(float t_timeElapsed = 0f; t_timeElapsed < gameRulesAsset.timeToStopAllBalls; t_timeElapsed += Time.deltaTime) {
             float t = Mathf.Clamp01(t_timeElapsed / gameRulesAsset.timeToStopAllBalls);
-            ballRigidbody.velocity = Vector3.Lerp(t_currentBallVelocity, t_futureBallVelocity, t);
-            ballRigidbody.angularVelocity = Vector3.Lerp(t_currentBallRotationVelocity, t_futureBallVelocity, t);
+            _ballRigidbody.velocity = Vector3.Lerp(t_currentBallVelocity, t_futureBallVelocity, t);
+            _ballRigidbody.angularVelocity = Vector3.Lerp(t_currentBallRotationVelocity, t_futureBallVelocity, t);
             yield return null;
         }
 
-        ballRigidbody.velocity = t_futureBallVelocity;
-        ballRigidbody.angularVelocity = t_futureBallVelocity;
+        _ballRigidbody.velocity = t_futureBallVelocity;
+        _ballRigidbody.angularVelocity = t_futureBallVelocity;
     }
 
     private void ResetCueStickPosition() {
@@ -164,8 +174,8 @@ public class CueBehavior : MonoBehaviour {
     }
 
     // CueBehavior interacting with UI elements is not good
-    public void SliderValueChanged(Slider slider) {
-        m_currentSliderValue = slider.value;
+    public void SliderValueChanged(Slider _slider) {
+        m_currentSliderValue = _slider.value;
         OffsetCueStickWithSliderValue();
     }
 
@@ -196,5 +206,15 @@ public class CueBehavior : MonoBehaviour {
     public void ResetCueBall() {
         cueBall.transform.position = m_lastValidCueBallPosition;
         cueBall.transform.eulerAngles = m_lastValidCueBallRotation;
+    }
+
+    public void StartBallDestroyed(Transform _ball) {
+        m_starBallsList.Remove(_ball);
+        Destroy(_ball.gameObject);
+
+        if(m_starBallsList.Count == 0) {
+            m_currentGameState = EGameState.GameOver;
+            youWinScreen.SetActive(true);
+        }
     }
 }
