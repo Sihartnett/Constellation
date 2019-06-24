@@ -11,6 +11,7 @@ public class CueBehavior : MonoBehaviour {
         WaitingToShoot,
         TransitioningToReady,
         GameOver,
+        Repositioning,
     }
 
     [Header("Necessary Transforms")]
@@ -86,11 +87,11 @@ public class CueBehavior : MonoBehaviour {
                 if (Input.GetMouseButton(MOUSE_PRIMARY_BUTTON) && !EventSystem.current.IsPointerOverGameObject()) {
                     ProcessCueStickRotation();
                 }
-
-                Debug.DrawRay(cueStick.transform.position, -cueStick.up * 10f, Color.blue, 1f);
+                Debug.DrawRay(cueStick.transform.position, -cueStick.up * 10f, Color.blue, 0.25f);
                 break;
             case EGameState.WaitingToShoot:
-                // Wait until we can shoot again...
+                // [TO DO]
+                // Maybe this could be a Coroutine ?!
                 m_timeWaiting += Time.deltaTime;
                 if(m_timeWaiting > gameRulesAsset.maximumWaitTime) {
                     m_currentGameState = EGameState.TransitioningToReady;
@@ -99,6 +100,8 @@ public class CueBehavior : MonoBehaviour {
                 }
                 break;
             case EGameState.TransitioningToReady:
+                // [TO DO]
+                // Maybe this could be a Coroutine ?!
                 m_timeWaiting += Time.deltaTime;
                 if(m_timeWaiting > gameRulesAsset.timeToStopAllBalls) {
                     ResetCueStickPosition();
@@ -107,15 +110,33 @@ public class CueBehavior : MonoBehaviour {
                     cueStickLine.gameObject.SetActive(true);
                 }
                 break;
+            case EGameState.Repositioning:
+                RaycastHit mouseHitInfo;
+
+                // [TO DO]: Make it collide only with playable area
+                // I can add a LayerMask thing.
+                if(Physics.Raycast(Camera.main.ScreenToWorldPoint(Input.mousePosition), Vector3.down, out mouseHitInfo, 100f)) {
+                    cueBall.position = mouseHitInfo.point;
+
+                    if (Input.GetMouseButtonDown(MOUSE_PRIMARY_BUTTON)) {
+                        cueBall.Translate(Vector3.up);
+                        cueBall.GetComponent<SphereCollider>().enabled = true;
+                        m_cueBallRigidbody.velocity = Vector3.zero;
+                        m_cueBallRigidbody.rotation = Quaternion.Euler(Vector3.zero);
+
+                        m_timeWaiting = 0f;
+                        m_currentGameState = EGameState.TransitioningToReady;
+                    }
+                }
+                break;
         }
 
-        // Showing where the ball will go
-        // Casting a Raycast to know exactly where the ball will hit
+        // Line Renderer to show where the ball will goes to
         RaycastHit hitInfo;
         bool hitAPoint = Physics.Raycast(cueBall.transform.position, -cueStick.up, out hitInfo);
 
         if(hitAPoint) {
-            Debug.DrawLine(cueBall.transform.position, hitInfo.point, Color.black, 5.0f);
+            Debug.DrawLine(cueBall.transform.position, hitInfo.point, Color.black, 0.25f);
 
             m_cueStickLineRenderer.SetPosition(0, cueBall.transform.localPosition);
             m_cueStickLineRenderer.SetPosition(1, hitInfo.point - transform.parent.position);
@@ -125,7 +146,7 @@ public class CueBehavior : MonoBehaviour {
     private void ProcessCueStickRotation() {
         Vector3 mousePositionInWorld = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         mousePositionInWorld.y = cueBall.transform.position.y;
-        Debug.DrawLine(mousePositionInWorld, cueBall.transform.position, Color.green, 1.0f);
+        Debug.DrawLine(mousePositionInWorld, cueBall.transform.position, Color.green, 0.25f);
 
         // Rotate so the stick is parallel with the mouse position
         Vector3 fromBallToStick = cueStick.transform.position - cueBall.transform.position;
@@ -204,8 +225,9 @@ public class CueBehavior : MonoBehaviour {
     }
 
     public void ResetCueBall() {
-        cueBall.transform.position = m_lastValidCueBallPosition;
-        cueBall.transform.eulerAngles = m_lastValidCueBallRotation;
+        // When the cue ball hits a hole, we choose where to put the ball back...
+        m_currentGameState = EGameState.Repositioning;
+        cueBall.GetComponent<SphereCollider>().enabled = false;
     }
 
     public void StartBallDestroyed(Transform _ball) {
