@@ -37,10 +37,6 @@ public class GameController : MonoBehaviour {
     private Vector3 m_cueStickOriginalPosition;
     private float m_currentSliderValue = 0f;
 
-    // Rotation around cue ball
-    private const float rotationSpeed = 300f;
-    private const float cueStickDistanceMultiplier = 2.5f;
-
     // Mouse Related Stuff
     private const int MOUSE_PRIMARY_BUTTON = 0;
 
@@ -49,7 +45,10 @@ public class GameController : MonoBehaviour {
 
     // Constant Values
     // Trying to avoid Magic Numbers (but they are magic numbers)
+    private const float k_rotationSpeed = 300f;
+    private const float k_cueStickDistanceMultiplier = 2.5f;
     private const float k_cueStickMultiplier = 2.5f;
+    private const float k_repositioningMaxRaycastDistance = 100f;
 
     private void Start() {
         // Caching Components
@@ -108,7 +107,7 @@ public class GameController : MonoBehaviour {
 
                 // [TO DO]: Make it collide only with playable area
                 // I can add a LayerMask thing.
-                if(Physics.Raycast(Camera.main.ScreenToWorldPoint(Input.mousePosition), Vector3.down, out mouseHitInfo, 100f)) {
+                if(Physics.Raycast(Camera.main.ScreenToWorldPoint(Input.mousePosition), Vector3.down, out mouseHitInfo, k_repositioningMaxRaycastDistance)) {
                     m_cueBallTransform.position = mouseHitInfo.point;
 
                     if (Input.GetMouseButtonDown(MOUSE_PRIMARY_BUTTON)) {
@@ -146,10 +145,10 @@ public class GameController : MonoBehaviour {
         Vector3 fromBallToMouse = mousePositionInWorld - cueBall.transform.position;
         float t_rotationValue = Vector3.SignedAngle(fromBallToStick, fromBallToMouse, Vector3.up) * Mathf.Deg2Rad;
 
-        cueStick.RotateAround(m_cueBallTransform.position, Vector3.up, t_rotationValue * Time.deltaTime * rotationSpeed);
+        cueStick.RotateAround(m_cueBallTransform.position, Vector3.up, t_rotationValue * Time.deltaTime * k_rotationSpeed);
 
         // The Original Position should be when slider value = 0
-        m_cueStickOriginalPosition = cueStick.position - ((cueStick.transform.up * cueStickDistanceMultiplier) * m_currentSliderValue);
+        m_cueStickOriginalPosition = cueStick.position - ((cueStick.transform.up * k_cueStickDistanceMultiplier) * m_currentSliderValue);
     }
 
     private void DecelerateAllBalls() {
@@ -174,7 +173,7 @@ public class GameController : MonoBehaviour {
     }
 
     private void OffsetCueStickWithSliderValue() {
-        Vector3 t_cueStickMaximumDistance = m_cueStickOriginalPosition + (cueStick.transform.up * cueStickDistanceMultiplier);
+        Vector3 t_cueStickMaximumDistance = m_cueStickOriginalPosition + (cueStick.transform.up * k_cueStickDistanceMultiplier);
         cueStick.transform.position = Vector3.Lerp(m_cueStickOriginalPosition, t_cueStickMaximumDistance, m_currentSliderValue);
     } 
 
