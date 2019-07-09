@@ -18,9 +18,10 @@ public class GameController : MonoBehaviour {
     public Transform cueBall;
     public Transform cueStick;
     public Transform[] starBalls;
+    // The purpose of this list is to (1) Decelerate all balls on the playing and area and (2) check for win condition
     private List<Transform> m_starBallsList;
 
-    [Header("Cue Stick Lines")]
+    [Header("Cue Stick Line")]
     public Transform cueStickLine;
     private LineRenderer m_cueStickLineRenderer;
 
@@ -44,6 +45,10 @@ public class GameController : MonoBehaviour {
 
     // State Related
     private EGameState m_currentGameState = EGameState.ReadyToShoot;
+
+    // Constant Values
+    // Trying to avoid Magic Numbers (but they are magic numbers)
+    private const float k_cueStickMultiplier = 2.5f;
 
     private void Start() {
         // Caching Components
@@ -165,12 +170,8 @@ public class GameController : MonoBehaviour {
 
     private void DecelerateAllBalls() {
         StartCoroutine(DecelerateBallRoutine(m_cueBallRigidbody));
-        foreach(Transform t_starBall in starBalls) {
-            if(t_starBall == null) {
-                // Ball was already destroyed!
-                continue;
-            }
 
+        foreach(Transform t_starBall in m_starBallsList) {
             StartCoroutine(DecelerateBallRoutine(t_starBall.GetComponent<Rigidbody>()));
         }
     }
@@ -193,7 +194,7 @@ public class GameController : MonoBehaviour {
 
     private void ResetCueStickPosition() {
         cueStick.position = cueBall.position;
-        cueStick.Translate(cueStick.up * 2.5f, Space.World);
+        cueStick.Translate(cueStick.up * k_cueStickMultiplier, Space.World);
         m_cueStickOriginalPosition = cueStick.position;
         OffsetCueStickWithSliderValue();
     }
