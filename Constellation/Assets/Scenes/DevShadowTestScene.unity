@@ -587,7 +587,7 @@ Transform:
   m_GameObject: {fileID: 248862739}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: -0.53, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 2078871317}
   m_RootOrder: 1
@@ -604,13 +604,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3fa8a9dc5ffb8944a9b20e21531fe8b3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cueBall: {fileID: 1041946640}
+  cueBall: {fileID: 1041946643}
   cueStick: {fileID: 724840014}
   starBalls:
-  - {fileID: 1351179160}
-  - {fileID: 737728465}
-  - {fileID: 1165921358}
-  - {fileID: 1731195127}
+  - {fileID: 1351179162}
+  - {fileID: 737728467}
+  - {fileID: 1165921360}
+  - {fileID: 1731195129}
   cueStickLine: {fileID: 1277226368}
   youWinScreen: {fileID: 1244640818}
   gameRulesAsset: {fileID: 11400000, guid: d77b72b672a83f64db07a711a7fe5786, type: 2}

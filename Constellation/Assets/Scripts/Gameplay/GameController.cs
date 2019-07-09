@@ -15,11 +15,12 @@ public class GameController : MonoBehaviour {
     }
 
     [Header("Necessary Transforms")]
-    public Transform cueBall;
+    public IndividualBallBehavior cueBall;
+    private Transform m_cueBallTransform;
     public Transform cueStick;
-    public Transform[] starBalls;
+    public IndividualBallBehavior[] starBalls;
     // The purpose of this list is to (1) Decelerate all balls on the playing and area and (2) check for win condition
-    private List<Transform> m_starBallsList;
+    private List<IndividualBallBehavior> m_starBallsList;
 
     [Header("Cue Stick Line")]
     public Transform cueStickLine;
@@ -52,7 +53,8 @@ public class GameController : MonoBehaviour {
 
     private void Start() {
         // Caching Components
-        m_cueBallRigidbody = cueBall.GetComponent<Rigidbody>();
+        m_cueBallTransform = cueBall.transform;
+        m_cueBallRigidbody = m_cueBallTransform.GetComponent<Rigidbody>();
         m_cueStickLineRenderer = cueStickLine.GetComponent<LineRenderer>();
         m_starBallsList = starBalls.ToList();
 
@@ -68,24 +70,6 @@ public class GameController : MonoBehaviour {
         foreach(DetectBallTrigger ballTrigger in detectBallTriggers) {
             ballTrigger.CueBallOnTrigger += ResetCueBall;
             ballTrigger.StarBallOnTrigger += StartBallDestroyed;
-        }
-    }
-
-    private void OnValidate() {
-        if(cueBall) {
-            Debug.Log("Validating Cue Ball...");
-            Rigidbody t_cueBallRigidbody = cueBall.GetComponent<Rigidbody>();
-            t_cueBallRigidbody.interpolation = RigidbodyInterpolation.Extrapolate;
-            t_cueBallRigidbody.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
-        }
-
-        if(starBalls.Length > 0) {
-            Debug.Log("Validating Star Balls...");
-            foreach(Transform t_starBall in starBalls) {
-                Rigidbody t_starBallRigidbody = t_starBall.GetComponent<Rigidbody>();
-                t_starBallRigidbody.interpolation = RigidbodyInterpolation.Extrapolate;
-                t_starBallRigidbody.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
-            }
         }
     }
 
@@ -125,10 +109,10 @@ public class GameController : MonoBehaviour {
                 // [TO DO]: Make it collide only with playable area
                 // I can add a LayerMask thing.
                 if(Physics.Raycast(Camera.main.ScreenToWorldPoint(Input.mousePosition), Vector3.down, out mouseHitInfo, 100f)) {
-                    cueBall.position = mouseHitInfo.point;
+                    m_cueBallTransform.position = mouseHitInfo.point;
 
                     if (Input.GetMouseButtonDown(MOUSE_PRIMARY_BUTTON)) {
-                        cueBall.Translate(Vector3.up);
+                        m_cueBallTransform.Translate(Vector3.up);
                         cueBall.GetComponent<SphereCollider>().enabled = true;
                         m_cueBallRigidbody.velocity = Vector3.zero;
                         m_cueBallRigidbody.rotation = Quaternion.Euler(Vector3.zero);
@@ -162,38 +146,22 @@ public class GameController : MonoBehaviour {
         Vector3 fromBallToMouse = mousePositionInWorld - cueBall.transform.position;
         float t_rotationValue = Vector3.SignedAngle(fromBallToStick, fromBallToMouse, Vector3.up) * Mathf.Deg2Rad;
 
-        cueStick.RotateAround(cueBall.position, Vector3.up, t_rotationValue * Time.deltaTime * rotationSpeed);
+        cueStick.RotateAround(m_cueBallTransform.position, Vector3.up, t_rotationValue * Time.deltaTime * rotationSpeed);
 
         // The Original Position should be when slider value = 0
         m_cueStickOriginalPosition = cueStick.position - ((cueStick.transform.up * cueStickDistanceMultiplier) * m_currentSliderValue);
     }
 
     private void DecelerateAllBalls() {
-        StartCoroutine(DecelerateBallRoutine(m_cueBallRigidbody));
+        cueBall.DecelerateBall(gameRulesAsset.timeToStopAllBalls);
 
-        foreach(Transform t_starBall in m_starBallsList) {
-            StartCoroutine(DecelerateBallRoutine(t_starBall.GetComponent<Rigidbody>()));
+        foreach(IndividualBallBehavior starBall in m_starBallsList) {
+            starBall.DecelerateBall(gameRulesAsset.timeToStopAllBalls);
         }
-    }
-
-    private IEnumerator DecelerateBallRoutine(Rigidbody _ballRigidbody) {
-        Vector3 t_currentBallVelocity = _ballRigidbody.velocity;
-        Vector3 t_currentBallRotationVelocity = _ballRigidbody.angularVelocity;
-        Vector3 t_futureBallVelocity = Vector3.zero;
-
-        for(float t_timeElapsed = 0f; t_timeElapsed < gameRulesAsset.timeToStopAllBalls; t_timeElapsed += Time.deltaTime) {
-            float t = Mathf.Clamp01(t_timeElapsed / gameRulesAsset.timeToStopAllBalls);
-            _ballRigidbody.velocity = Vector3.Lerp(t_currentBallVelocity, t_futureBallVelocity, t);
-            _ballRigidbody.angularVelocity = Vector3.Lerp(t_currentBallRotationVelocity, t_futureBallVelocity, t);
-            yield return null;
-        }
-
-        _ballRigidbody.velocity = t_futureBallVelocity;
-        _ballRigidbody.angularVelocity = t_futureBallVelocity;
     }
 
     private void ResetCueStickPosition() {
-        cueStick.position = cueBall.position;
+        cueStick.position = m_cueBallTransform.position;
         cueStick.Translate(cueStick.up * k_cueStickMultiplier, Space.World);
         m_cueStickOriginalPosition = cueStick.position;
         OffsetCueStickWithSliderValue();
@@ -232,7 +200,7 @@ public class GameController : MonoBehaviour {
     }
 
     public void StartBallDestroyed(Transform _ball) {
-        m_starBallsList.Remove(_ball);
+        m_starBallsList.Remove(_ball.GetComponent<IndividualBallBehavior>());
         Destroy(_ball.gameObject);
 
         if(m_starBallsList.Count == 0) {
