@@ -1,19 +1,17 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System;
 using UnityEngine;
 
 public class DetectBallTrigger : MonoBehaviour {
-    private CueBehavior m_cueBehaviorReference;
 
-    private void Start() {
-        m_cueBehaviorReference = FindObjectOfType<CueBehavior>();
-    }
+    public delegate void StartBallDestroyed(Transform _transform);
+    public event StartBallDestroyed StarBallOnTrigger;
+    public event Action CueBallOnTrigger;
 
     private void OnTriggerEnter(Collider other) {
         if(other.tag == "CueBall") {
-            m_cueBehaviorReference.ResetCueBall();
+            CueBallOnTrigger?.Invoke();
         } else if(other.tag == "StarBall") {
-            m_cueBehaviorReference.StartBallDestroyed(other.transform);
+            StarBallOnTrigger?.Invoke(other.transform);
         }
     }
 }

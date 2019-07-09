@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
-public class CueBehavior : MonoBehaviour {
+public class GameController : MonoBehaviour {
     public enum EGameState {
         ReadyToShoot,
         WaitingToShoot,
@@ -45,11 +45,8 @@ public class CueBehavior : MonoBehaviour {
     // State Related
     private EGameState m_currentGameState = EGameState.ReadyToShoot;
 
-    // Resetting Cue Ball Related
-    private Vector3 m_lastValidCueBallPosition;
-    private Vector3 m_lastValidCueBallRotation;
-
     private void Start() {
+        // Caching Components
         m_cueBallRigidbody = cueBall.GetComponent<Rigidbody>();
         m_cueStickLineRenderer = cueStickLine.GetComponent<LineRenderer>();
         m_starBallsList = starBalls.ToList();
@@ -60,6 +57,13 @@ public class CueBehavior : MonoBehaviour {
         // We keep it kinematic until we want to shoot
         m_cueBallRigidbody.isKinematic = true;
         m_cueStickOriginalPosition = cueStick.position;
+
+        // Preparing the Triggers
+        DetectBallTrigger[] detectBallTriggers = FindObjectsOfType<DetectBallTrigger>();
+        foreach(DetectBallTrigger ballTrigger in detectBallTriggers) {
+            ballTrigger.CueBallOnTrigger += ResetCueBall;
+            ballTrigger.StarBallOnTrigger += StartBallDestroyed;
+        }
     }
 
     private void OnValidate() {
@@ -139,7 +143,7 @@ public class CueBehavior : MonoBehaviour {
             Debug.DrawLine(cueBall.transform.position, hitInfo.point, Color.black, 0.25f);
 
             m_cueStickLineRenderer.SetPosition(0, cueBall.transform.localPosition);
-            m_cueStickLineRenderer.SetPosition(1, hitInfo.point - transform.parent.position);
+            m_cueStickLineRenderer.SetPosition(1, hitInfo.point - cueBall.transform.parent.position);
         }
     }
 
@@ -209,10 +213,6 @@ public class CueBehavior : MonoBehaviour {
         if(m_currentGameState != EGameState.ReadyToShoot) {
             return;
         }
-
-        // Saving Valid Position in case we need to restore it
-        m_lastValidCueBallPosition = cueBall.transform.position;
-        m_lastValidCueBallRotation = cueBall.transform.localEulerAngles;
 
         m_timeWaiting = 0f;
         m_currentGameState = EGameState.WaitingToShoot;
