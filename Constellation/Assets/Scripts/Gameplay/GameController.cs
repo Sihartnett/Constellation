@@ -76,7 +76,7 @@ public class GameController : MonoBehaviour {
         switch(m_currentGameState) {
             case EGameState.ReadyToShoot:
                 // Known Issue: There should be UI elements everywhere the player shouldn't be clicking...
-                if (Input.GetMouseButton(MOUSE_PRIMARY_BUTTON) && !EventSystem.current.IsPointerOverGameObject()) {
+                if(Input.GetMouseButton(MOUSE_PRIMARY_BUTTON) && !EventSystem.current.IsPointerOverGameObject()) {
                     ProcessCueStickRotation();
                 }
                 Debug.DrawRay(cueStick.transform.position, -cueStick.up * 10f, Color.blue, 0.25f);
@@ -124,12 +124,10 @@ public class GameController : MonoBehaviour {
         }
 
         // Line Renderer to show where the ball will goes to
-        RaycastHit hitInfo;
-        bool hitAPoint = Physics.Raycast(cueBall.transform.position, -cueStick.up, out hitInfo);
+        bool hitAPoint = Physics.Raycast(cueBall.transform.position, -cueStick.up, out RaycastHit hitInfo);
 
         if(hitAPoint) {
             Debug.DrawLine(cueBall.transform.position, hitInfo.point, Color.black, 0.25f);
-
             m_cueStickLineRenderer.SetPosition(0, cueBall.transform.localPosition);
             m_cueStickLineRenderer.SetPosition(1, hitInfo.point - cueBall.transform.parent.position);
         }
