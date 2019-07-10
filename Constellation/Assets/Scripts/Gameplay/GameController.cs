@@ -138,9 +138,9 @@ public class GameController : MonoBehaviour {
         mousePositionInWorld.y = cueBall.transform.position.y;
         Debug.DrawLine(mousePositionInWorld, cueBall.transform.position, Color.green, 0.25f);
 
-        // Rotate so the stick is parallel with the mouse position
+        // Rotate so the stick is opposite to the mouse position
         Vector3 fromBallToStick = cueStick.transform.position - cueBall.transform.position;
-        Vector3 fromBallToMouse = mousePositionInWorld - cueBall.transform.position;
+        Vector3 fromBallToMouse = -(mousePositionInWorld - cueBall.transform.position);
         float t_rotationValue = Vector3.SignedAngle(fromBallToStick, fromBallToMouse, Vector3.up) * Mathf.Deg2Rad;
 
         cueStick.RotateAround(m_cueBallTransform.position, Vector3.up, t_rotationValue * Time.deltaTime * k_rotationSpeed);
@@ -193,6 +193,8 @@ public class GameController : MonoBehaviour {
     public void ResetCueBall() {
         // When the cue ball hits a hole, we choose where to put the ball back...
         m_currentGameState = EGameState.Repositioning;
+        cueStick.gameObject.SetActive(false);
+        cueStickLine.gameObject.SetActive(false);
         cueBall.GetComponent<SphereCollider>().enabled = false;
     }
 
